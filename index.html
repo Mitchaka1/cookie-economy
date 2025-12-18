@@ -136,6 +136,24 @@
     .split{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
     @media (max-width:740px){.split{grid-template-columns:1fr}}
 
+    .lockBox{position:relative;}
+    .lockOverlay{
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      text-align:center;
+      padding:16px;
+      border-radius:14px;
+      background: rgba(11,12,16,.82);
+      border:1px dashed var(--border);
+      color:var(--muted);
+      font-weight:600;
+    }
+    .lockContent.locked{
+      filter: blur(12px);
+      pointer-events:none;
+      user-select:none;
+    }
+
     /* Musical Ball overlay */
     .overlay{
       position:fixed; inset:0;
@@ -366,11 +384,18 @@
       <section class="card" style="margin-top:14px">
         <div class="titleRow">
           <div><span class="tag a">ACTIVE CUP (A)</span><span class="tag z">ADULT CUP (Z)</span></div>
-          <div class="mini">Full list</div>
+          <div class="row">
+            <input id="adultCodeInput" type="password" placeholder="Adult code" aria-label="Adult section code" />
+            <button id="unlockAdultBtn">Unlock Adult Cup</button>
+          </div>
         </div>
+        <p class="mini" id="adultStatus" style="margin:6px 0 0">Enter the code to unlock the adult section.</p>
         <div class="twoCol">
           <div id="listA"></div>
-          <div id="listZ"></div>
+          <div id="adultLockWrap" class="lockBox">
+            <div id="adultOverlay" class="lockOverlay">Enter the code to unlock the Adult Cup.</div>
+            <div id="listZ" class="lockContent locked"></div>
+          </div>
         </div>
       </section>
     </main>
@@ -407,7 +432,8 @@
     lastId: null,
     retiredIds: [],
     players: [], // {name,wins,losses}
-    history: []  // {ts,type:"win"|"loss",playerName,gameId,gameName}
+    history: [],  // {ts,type:"win"|"loss",playerName,gameId,gameName}
+    adultUnlocked: false
   });
 
   function loadState(){
@@ -422,6 +448,7 @@
   }
   function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
   let state = loadState();
+  const ADULT_CODE = "cookie";
 
   const $ = (id) => document.getElementById(id);
   function escapeHtml(str){
@@ -584,6 +611,29 @@
   function renderLists(){
     $("listA").innerHTML = renderList("A");
     $("listZ").innerHTML = renderList("Z");
+  }
+
+  function updateAdultLockUI(){
+    const unlocked = !!state.adultUnlocked;
+    $("listZ").classList.toggle("locked", !unlocked);
+    $("adultOverlay").classList.toggle("hidden", unlocked);
+    $("adultStatus").textContent = unlocked
+      ? "Adult section unlocked."
+      : "Adult section locked. Enter the code to view.";
+  }
+
+  function unlockAdultSection(){
+    const code = ($("adultCodeInput").value || "").trim().toLowerCase();
+    $("adultCodeInput").value = "";
+    if(code === ADULT_CODE){
+      state.adultUnlocked = true;
+      saveState();
+      updateAdultLockUI();
+      return;
+    }
+    $("adultStatus").textContent = code
+      ? "Incorrect code."
+      : "Enter the code to unlock the adult section.";
   }
 
   // -------- Musical Ball --------
@@ -1023,10 +1073,13 @@
   $("logLossBtn").addEventListener("click", logLoss);
   $("clearHistoryBtn").addEventListener("click", clearHistory);
   $("saveScoreImgBtn").addEventListener("click", saveScoreboardToImage);
+  $("unlockAdultBtn").addEventListener("click", unlockAdultSection);
+  $("adultCodeInput").addEventListener("keydown", (e)=>{ if(e.key === "Enter") unlockAdultSection(); });
 
   // Init
   function init(){
     renderLists();
+    updateAdultLockUI();
     renderScoreboard();
     syncPlayerSelect();
     syncGameSelect(true);
