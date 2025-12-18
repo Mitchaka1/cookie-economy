@@ -467,7 +467,7 @@
     const retired = state.retiredIds.includes(game.id);
     const playBtn = game.hasPlay ? `
       <div class="hr"></div>
-      <button class="primary" id="playGameBtn">▶ Play Game (Random Alarm)</button>
+      <button class="primary" data-play-game>▶ Play Game (Random Alarm)</button>
       <div class="mini" style="margin-top:8px">Green = pass. Red + alarm = STOP.</div>
     ` : ``;
 
@@ -512,9 +512,6 @@
     setDisplay(renderGameCard(game));
     updateHeader();
     syncGameSelect(true);
-
-    const btn = document.getElementById("playGameBtn");
-    if(btn) btn.addEventListener("click", openMusicalBall);
   }
 
   function retireCurrent(){
@@ -703,6 +700,12 @@
   overlay.addEventListener("click", (e) => { if(e.target === overlay) closeMusicalBall(); });
   mbStartBtn.addEventListener("click", (e) => { e.stopPropagation(); startMusicalBallTimer(); });
   mbStopBtn.addEventListener("click", (e) => { e.stopPropagation(); closeMusicalBall(); });
+  document.addEventListener("click", (e) => {
+    const playBtn = e.target.closest("[data-play-game]");
+    if(!playBtn) return;
+    e.stopPropagation();
+    openMusicalBall();
+  });
 
   // -------- Scoreboard --------
   function addPlayersFromInput(){
