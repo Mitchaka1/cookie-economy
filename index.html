@@ -603,6 +603,19 @@
   let audioCtx = null;
   let alarmOn = false;
 
+  async function ensureAudioContext(){
+    if(!audioCtx){
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if(audioCtx.state === "suspended"){
+      try{
+        await audioCtx.resume();
+      }catch(err){
+        console.error("Failed to resume AudioContext", err);
+      }
+    }
+  }
+
   function openMusicalBall(){
     overlay.classList.remove("red");
     overlay.classList.add("green");
@@ -616,10 +629,9 @@
     overlay.style.display = "none";
   }
 
-  function startAlarm(){
-    if(!audioCtx){
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
+  async function startAlarm(){
+    await ensureAudioContext();
+    if(!audioCtx) return;
     alarmOn = true;
 
     const playBeep = () => {
@@ -652,9 +664,10 @@
     if(alarmInterval){ clearInterval(alarmInterval); alarmInterval = null; }
   }
 
-  function startMusicalBallTimer(){
+  async function startMusicalBallTimer(){
     stopAlarm();
     if(mbTimeout){ clearTimeout(mbTimeout); mbTimeout = null; }
+    await ensureAudioContext();
 
     let minS = clamp(parseInt(mbMin.value || "10", 10), 8, 120);
     let maxS = clamp(parseInt(mbMax.value || "25", 10), 8, 120);
