@@ -1,0 +1,1034 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Cookie Economy</title>
+  <style>
+    :root{
+      --bg:#0b0c10;
+      --card:#12141c;
+      --muted:#9aa4b2;
+      --text:#e8edf2;
+      --a:#7dd3fc;
+      --z:#fb7185;
+      --warn:#fbbf24;
+      --ok:#34d399;
+      --border:#202434;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background: radial-gradient(1200px 700px at 20% 0%, rgba(125,211,252,.15), transparent 60%),
+                  radial-gradient(1200px 700px at 80% 0%, rgba(251,113,133,.12), transparent 60%),
+                  var(--bg);
+      color:var(--text);
+      line-height:1.35;
+    }
+    header{
+      padding:22px 16px 10px;
+      border-bottom:1px solid var(--border);
+      position:sticky; top:0;
+      background: rgba(11,12,16,.92);
+      backdrop-filter: blur(10px);
+      z-index:10;
+    }
+    .wrap{max-width:1080px;margin:0 auto;padding:0 14px 28px;}
+    h1{margin:0;font-size:20px;letter-spacing:.2px}
+    .sub{margin:6px 0 0;color:var(--muted);font-size:13px}
+    .grid{
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap:14px;
+      margin-top:14px;
+    }
+    @media (max-width:980px){.grid{grid-template-columns:1fr}}
+    .card{
+      background: rgba(18,20,28,.9);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    input, button, select{
+      border-radius:12px;
+      border:1px solid var(--border);
+      padding:10px 12px;
+      font-size:14px;
+      background:#0f1118;
+      color:var(--text);
+      outline:none;
+    }
+    input{flex:1; min-width:160px}
+    select{flex:1; min-width:180px}
+    button{
+      cursor:pointer;
+      transition:.15s transform ease, .15s opacity ease;
+      user-select:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+    }
+    button:hover{transform: translateY(-1px)}
+    button:active{transform: translateY(0px); opacity:.9}
+    .diceBtn{width:44px;padding:10px 0;font-size:18px}
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      color:var(--muted);
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .pill b{color:var(--text)}
+    .tag{
+      display:inline-block;
+      font-size:12px;
+      padding:4px 10px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      margin-right:8px;
+    }
+    .tag.a{color:var(--a); border-color: rgba(125,211,252,.35); background: rgba(125,211,252,.08)}
+    .tag.z{color:var(--z); border-color: rgba(251,113,133,.35); background: rgba(251,113,133,.08)}
+    .tag.g{color:var(--ok); border-color: rgba(52,211,153,.35); background: rgba(52,211,153,.08)}
+    .tag.w{color:var(--warn); border-color: rgba(251,191,36,.35); background: rgba(251,191,36,.08)}
+    .muted{color:var(--muted)}
+    .hr{height:1px;background:var(--border);margin:12px 0}
+    .big{font-size:18px;margin:0;}
+    .titleRow{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    details{
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:10px 12px;
+      background: rgba(15,17,24,.7);
+      margin:10px 0;
+    }
+    summary{cursor:pointer; font-weight:600}
+    .twoCol{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    @media (max-width:640px){.twoCol{grid-template-columns:1fr}}
+    .mini{font-size:12px;color:var(--muted)}
+    .foot{margin-top:14px;color:var(--muted);font-size:12px;}
+    .danger{border-color: rgba(251,113,133,.35);background: rgba(251,113,133,.06);}
+    .primary{border-color: rgba(125,211,252,.35);background: rgba(125,211,252,.08);}
+    .btnDanger{border-color: rgba(251,113,133,.35);background: rgba(251,113,133,.08);}
+    .btnOk{border-color: rgba(52,211,153,.35);background: rgba(52,211,153,.08);}
+
+    table{width:100%;border-collapse:collapse;}
+    th,td{padding:10px;border-bottom:1px solid var(--border);text-align:left;font-size:14px;}
+    th{color:var(--muted);font-weight:600;}
+    .right{text-align:right}
+
+    .chip{
+      display:inline-flex;align-items:center;gap:8px;
+      padding:6px 10px;border-radius:999px;border:1px solid var(--border);
+      background: rgba(15,17,24,.7);
+      font-size:12px;color:var(--muted);
+      margin:4px 6px 0 0;
+    }
+    .chip button{padding:4px 8px;border-radius:999px;font-size:12px;}
+    .split{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    @media (max-width:740px){.split{grid-template-columns:1fr}}
+
+    /* Musical Ball overlay */
+    .overlay{
+      position:fixed; inset:0;
+      display:none;
+      align-items:center; justify-content:center;
+      z-index:9999;
+      text-align:center;
+      padding:24px;
+    }
+    .overlayInner{
+      max-width:760px;
+      width:100%;
+      background: rgba(0,0,0,.25);
+      border:1px solid rgba(255,255,255,.18);
+      border-radius:20px;
+      padding:18px;
+      backdrop-filter: blur(8px);
+    }
+    .overlay.green{background:#0b3d1f;}
+    .overlay.red{background:#4a0d17;}
+    .overlay .controls{
+      margin-top:14px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:center;
+      align-items:center;
+    }
+    .overlay input{
+      max-width:180px;
+      background: rgba(0,0,0,.25);
+      border-color: rgba(255,255,255,.22);
+    }
+    .overlay button{
+      background: rgba(0,0,0,.25);
+      border-color: rgba(255,255,255,.22);
+    }
+
+    /* Welcome splash */
+    .splash{
+      position:fixed; inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:22px;
+      z-index:20000;
+      background:
+        radial-gradient(900px 520px at 20% 10%, rgba(125,211,252,.18), transparent 60%),
+        radial-gradient(900px 520px at 80% 10%, rgba(251,113,133,.15), transparent 60%),
+        rgba(11,12,16,.96);
+      backdrop-filter: blur(10px);
+    }
+    .splashCard{
+      width:min(860px, 100%);
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(18,20,28,.75);
+      border-radius:22px;
+      padding:18px;
+      box-shadow: 0 16px 50px rgba(0,0,0,.45);
+      text-align:center;
+    }
+    .splashTitle{
+      margin:4px 0 6px;
+      font-size:28px;
+      letter-spacing:.2px;
+    }
+    .splashText{
+      margin:0 0 14px;
+      color: rgba(232,237,242,.88);
+      font-size:15px;
+    }
+    .splashRow{
+      display:flex;
+      gap:10px;
+      justify-content:center;
+      flex-wrap:wrap;
+      margin-top:8px;
+    }
+    .splashHint{
+      margin-top:12px;
+      color: rgba(154,164,178,.95);
+      font-size:12px;
+    }
+    .hidden{display:none !important;}
+  </style>
+</head>
+
+<body>
+
+  <!-- Welcome Screen -->
+  <div id="welcomeSplash" class="splash" aria-label="Welcome screen">
+    <div class="splashCard">
+      <div class="tag g" style="margin-bottom:10px; display:inline-block;">COOKIE ECONOMY 🍪</div>
+      <h2 class="splashTitle">Welcome.</h2>
+      <p class="splashText">Thank you for coming.</p>
+      <div class="splashRow">
+        <button id="enterBtn" class="primary">Enter the Rulebook</button>
+        <button id="skipAutoBtn" class="btnDanger" title="Go instantly">Go Now</button>
+      </div>
+      <div class="splashHint">Auto enters in <span id="autoCountdown">10</span>s</div>
+    </div>
+  </div>
+
+  <!-- Main App (hidden until splash closes) -->
+  <div id="appRoot" class="hidden">
+    <header>
+      <div class="wrap">
+        <h1>Cookie Economy 🍪</h1>
+        <div class="sub">Draw an ID → reveal. 🎲 = random pick. Autosaves offline.</div>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <div class="grid">
+        <section class="card">
+          <div class="titleRow">
+            <div>
+              <span class="tag g">RULE REVEAL</span>
+              <span class="pill">Last ID: <b id="lastId">None</b></span>
+              <span class="pill">Round: <b id="roundNum">1</b></span>
+            </div>
+            <div class="mini">Type <b>A1</b> or <b>Z3</b></div>
+          </div>
+
+          <div class="row" style="margin-top:10px">
+            <input id="idInput" placeholder="Enter ID (A1, Z4...)" autocomplete="off" />
+            <button id="dicePickBtn" class="diceBtn" title="Random pick">🎲</button>
+            <button id="revealBtn">Reveal</button>
+            <button id="retireBtn" title="Retire this ID (not reused)">Retire</button>
+          </div>
+
+          <div class="mini" style="margin-top:8px">
+            🎲 respects: no same twice in a row + first 2 rounds redraw (Z1/Z3) + avoids retired IDs.
+          </div>
+
+          <div class="hr"></div>
+          <div id="display"><p class="muted">No ID revealed yet.</p></div>
+        </section>
+
+        <aside class="card">
+          <div class="titleRow">
+            <div><span class="tag w">HOUSE RULES</span></div>
+            <div class="row">
+              <button id="resetBtn">Reset Night</button>
+              <button id="nukeBtn" class="btnDanger">Hard Reset</button>
+            </div>
+          </div>
+
+          <details open>
+            <summary>🎲 Game Selection</summary>
+            <ul>
+              <li><b>No same game twice in a row.</b></li>
+              <li>First 2 rounds: if <b>Z1</b> or <b>Z3</b> drawn, <b>redraw once</b>.</li>
+              <li>After playing, ID is <b>retired</b>.</li>
+            </ul>
+          </details>
+
+          <details open>
+            <summary>🍪 Cookie Economy</summary>
+            <ul>
+              <li>Start with <b>5 cookies</b>.</li>
+              <li>1 cookie skips 1 punishment (shot OR item).</li>
+              <li>Cleanup: first person at <b>0 cookies</b>.</li>
+            </ul>
+          </details>
+
+          <details class="danger">
+            <summary>⚠️ General Rules</summary>
+            <ul>
+              <li>Arguing/stalling/refusing = punishment.</li>
+              <li>Group decision is final.</li>
+            </ul>
+          </details>
+
+          <p class="foot">Autosave is ON. Offline is fine.</p>
+        </aside>
+      </div>
+
+      <section class="card" style="margin-top:14px">
+        <div class="titleRow">
+          <div>
+            <span class="tag g">SCOREBOARD</span>
+            <span class="pill">Players: <b id="playerCount">0</b></span>
+            <span class="pill">History: <b id="historyCount">0</b></span>
+          </div>
+          <div class="row">
+            <button id="saveScoreImgBtn" class="btnOk">Save to Photos 🖼️</button>
+            <button id="clearHistoryBtn" class="btnDanger">Clear History</button>
+          </div>
+        </div>
+
+        <div class="split" style="margin-top:10px">
+          <div>
+            <div class="mini">Add players (comma separated)</div>
+            <div class="row" style="margin-top:8px">
+              <input id="playerInput" placeholder="e.g. Mitch, Chris, Hana, Kenzie, Tayla" />
+              <button id="addPlayersBtn">Add</button>
+            </div>
+            <div class="mini" style="margin-top:10px">Quick roster</div>
+            <div id="playerChips" style="margin-top:6px"></div>
+          </div>
+
+          <div>
+            <div class="mini">Log a result</div>
+            <div class="row" style="margin-top:8px">
+              <select id="playerSelect"></select>
+              <select id="gameSelect"></select>
+              <button id="logWinBtn" class="primary">Log Win</button>
+              <button id="logLossBtn" class="btnDanger">Log Loss</button>
+            </div>
+            <div class="mini" style="margin-top:8px">
+              Pick player + game. Game defaults to currently revealed ID.
+            </div>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+        <div id="scoreTableWrap"></div>
+
+        <details style="margin-top:12px">
+          <summary>🧾 History (latest first)</summary>
+          <div id="historyList" style="margin-top:10px"></div>
+        </details>
+
+        <canvas id="scoreCanvas" width="1200" height="630" style="display:none"></canvas>
+      </section>
+
+      <section class="card" style="margin-top:14px">
+        <div class="titleRow">
+          <div><span class="tag a">ACTIVE CUP (A)</span><span class="tag z">ADULT CUP (Z)</span></div>
+          <div class="mini">Full list</div>
+        </div>
+        <div class="twoCol">
+          <div id="listA"></div>
+          <div id="listZ"></div>
+        </div>
+      </section>
+    </main>
+
+    <div id="mbOverlay" class="overlay green" role="dialog" aria-modal="true">
+      <div class="overlayInner">
+        <h2>🎈 Musical Ball</h2>
+        <p id="mbStatus"><b>GREEN</b> = music ON. Pass the balloon.</p>
+        <div class="mini" style="margin-top:8px" id="mbTimerText">Set a range and hit Start.</div>
+
+        <div class="controls">
+          <label class="mini">Min (s):
+            <input id="mbMin" type="number" min="8" max="120" value="10" />
+          </label>
+          <label class="mini">Max (s):
+            <input id="mbMax" type="number" min="8" max="120" value="25" />
+          </label>
+          <button id="mbStartBtn">Start</button>
+          <button id="mbStopBtn">Stop</button>
+        </div>
+
+        <div class="mini" style="margin-top:10px">
+          Stops randomly inside the range (but not too soon). Tap outside the box to exit.
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const STORAGE_KEY = "cookie_economy_state_v3";
+
+  const defaultState = () => ({
+    round: 1,
+    lastId: null,
+    retiredIds: [],
+    players: [], // {name,wins,losses}
+    history: []  // {ts,type:"win"|"loss",playerName,gameId,gameName}
+  });
+
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return defaultState();
+      const parsed = JSON.parse(raw);
+      return { ...defaultState(), ...parsed };
+    }catch(e){
+      return defaultState();
+    }
+  }
+  function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  let state = loadState();
+
+  const $ = (id) => document.getElementById(id);
+  function escapeHtml(str){
+    return String(str).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+  }
+  function normId(raw){ return (raw || "").trim().toUpperCase().replace(/\s+/g,""); }
+  function clamp(n, lo, hi){ return Math.max(lo, Math.min(hi, n)); }
+  function randInt(lo, hi){ return Math.floor(Math.random() * (hi - lo + 1)) + lo; }
+
+  const games = {
+    A1:{id:"A1",cup:"A",name:"Don’t Spill the Cup",objective:"Balance + nerves",setup:"One cup, water",punishment:"1 shot on spill",
+      rules:["Players take turns adding a small amount of water to the cup.","If the cup spills, that player takes 1 shot.","Reset the cup after a spill."]},
+    A2:{id:"A2",cup:"A",name:"Balloon Cup Race",objective:"Speed + breath control",setup:"One cup per player, balloons",punishment:"Loser drinks",
+      rules:["Players use a balloon to push air and move their cup across the table.","No hands allowed.","First cup to reach the edge wins.","Loser drinks."]},
+    A3:{id:"A3",cup:"A",name:"Balloon Cup Face-Off (1v1)",objective:"Head-to-head pressure",setup:"One cup, two balloons",punishment:"Cup off your side = you drink",
+      rules:["Two players face each other with the cup in the center.","Both use balloons to blow air.","If the cup goes off your side, you drink."]},
+    A4:{id:"A4",cup:"A",name:"Don’t Pick the Ball",objective:"Luck + suspense",setup:"Multiple cups, one ball",punishment:"If you pick the ball, you drink",
+      rules:["Hide the ball under one cup and shuffle.","Each player picks one cup.","If you pick the ball, you drink.","That player hides the ball next round."]},
+    A5:{id:"A5",cup:"A",name:"Musical Ball",objective:"Timing + panic",setup:"Music, one balloon",punishment:"Holder drinks",
+      rules:["Pass the balloon while music plays.","When the music stops, whoever is holding it drinks.","Resume immediately."], hasPlay:true},
+    A6:{id:"A6",cup:"A",name:"Spoon Transfer",objective:"Coordination",setup:"Two bowls, balls, spoon",punishment:"Last to finish drinks",
+      rules:["Transfer balls from one bowl to the other using a spoon held in your mouth.","No hands allowed.","First to finish wins.","Last to finish drinks."]},
+    A7:{id:"A7",cup:"A",name:"Medusa Game",objective:"Eye-contact chaos",setup:"None",punishment:"Locked eyes = both drink",
+      rules:["Everyone looks down.","On “go,” everyone looks up at one person.","If two people lock eyes, both drink.","Reset and repeat."]},
+    Z1:{id:"Z1",cup:"Z",name:"Dice of Doom 🎲",objective:"Risk + power",setup:"One die",punishment:"Varies by roll",
+      rules:["Players take turns rolling.","1 → 1 shot","2–5 → lose that number of items","6 → safe","After rolling a 6, roll again for any player of your choice. The result applies to them.","If a player runs out of items, any remaining count converts to shots."]},
+    Z2:{id:"Z2",cup:"Z",name:"Whisper Dare",objective:"Tension + secrecy",setup:"None",punishment:"If B does it → A drinks. If B refuses → B drinks.",
+      rules:["Player A whispers a dare to Player B.","If B does it, A drinks.","If B refuses, B drinks.","Dares must be quick."]},
+    Z3:{id:"Z3",cup:"Z",name:"Blindfold Guess",objective:"Sensory pressure",setup:"Blindfold",punishment:"Wrong guess = blindfolded drinks. Correct guess = toucher drinks.",
+      rules:["One player is blindfolded.","Another player touches them anywhere.","Blindfolded player guesses who touched them.","Correct guess → toucher drinks.","Wrong guess → blindfolded player drinks."]},
+    Z4:{id:"Z4",cup:"Z",name:"Lap Switch",objective:"Proximity + composure",setup:"None",punishment:"Laugh/pull away/break eye contact = drink",
+      rules:["One player sits on another player’s lap for 10 seconds.","Laughing, pulling away, or breaking eye contact results in a drink.","Switch players after 10 seconds."]},
+    Z5:{id:"Z5",cup:"Z",name:"Twister",objective:"Balance + proximity",setup:"Twister mat and spinner",punishment:"Fall/illegal touch = drink. Winner assigns 1 drink.",
+      rules:["Follow the spinner as normal.","If you fall, touch the mat with a knee or elbow, or can’t hold the position, you drink.","Last player standing assigns one drink."]}
+  };
+
+  function badgeForCup(cup){
+    return cup === "A" ? `<span class="tag a">ACTIVE</span>` : `<span class="tag z">ADULT</span>`;
+  }
+
+  function renderGameCard(game){
+    const retired = state.retiredIds.includes(game.id);
+    const playBtn = game.hasPlay ? `
+      <div class="hr"></div>
+      <button class="primary" id="playGameBtn">▶ Play Game (Random Alarm)</button>
+      <div class="mini" style="margin-top:8px">Green = pass. Red + alarm = STOP.</div>
+    ` : ``;
+
+    return `
+      <div>
+        <div class="titleRow">
+          <h2 class="big">${game.id} — ${escapeHtml(game.name)}</h2>
+          <div>${badgeForCup(game.cup)} <span class="pill">Punishment: <b>${escapeHtml(game.punishment)}</b></span></div>
+        </div>
+        <p class="muted" style="margin:10px 0 0"><b>Objective:</b> ${escapeHtml(game.objective)}<br><b>Setup:</b> ${escapeHtml(game.setup)}</p>
+        <div class="hr"></div>
+        <ol>${game.rules.map(r => `<li>${escapeHtml(r)}</li>`).join("")}</ol>
+        ${retired ? `<p class="mini">✅ This ID is retired.</p>` : ``}
+        ${playBtn}
+      </div>
+    `;
+  }
+
+  function setDisplay(html){ $("display").innerHTML = html; }
+  function updateHeader(){
+    $("lastId").textContent = state.lastId || "None";
+    $("roundNum").textContent = state.round;
+  }
+
+  function reveal(id){
+    const game = games[id];
+    if(!game){
+      setDisplay(`<p class="muted">Unknown ID: <b>${escapeHtml(id)}</b>.</p>`);
+      return;
+    }
+    if(state.lastId && id === state.lastId){
+      setDisplay(`<p class="muted">🚫 Same game twice in a row.</p>` + renderGameCard(game));
+      return;
+    }
+    if(state.retiredIds.includes(id)){
+      setDisplay(`<p class="muted">♻️ Retired ID. Redraw.</p>` + renderGameCard(game));
+      return;
+    }
+    state.lastId = id;
+    saveState();
+
+    setDisplay(renderGameCard(game));
+    updateHeader();
+    syncGameSelect(true);
+
+    const btn = document.getElementById("playGameBtn");
+    if(btn) btn.addEventListener("click", openMusicalBall);
+  }
+
+  function retireCurrent(){
+    if(!state.lastId) return;
+    state.retiredIds.push(state.lastId);
+    state.lastId = null;
+    state.round += 1;
+    saveState();
+    updateHeader();
+    setDisplay(`<p class="muted">✅ Retired. Draw again.</p>`);
+    syncGameSelect(false);
+  }
+
+  function resetNight(){
+    state.round = 1;
+    state.lastId = null;
+    state.retiredIds = [];
+    saveState();
+    updateHeader();
+    $("idInput").value = "";
+    setDisplay(`<p class="muted">Reset done.</p>`);
+    syncGameSelect(false);
+  }
+
+  function hardReset(){
+    if(!confirm("Hard Reset clears players + history + rule state. Do it?")) return;
+    state = defaultState();
+    saveState();
+    location.reload();
+  }
+
+  function randomPick(){
+    const ids = Object.keys(games).filter(id => !state.retiredIds.includes(id));
+    if(ids.length === 0){
+      setDisplay(`<p class="muted">No IDs left. 🎉</p>`);
+      return;
+    }
+    let pool = ids.filter(id => id !== state.lastId);
+    if(state.round <= 2){
+      const filtered = pool.filter(id => !(id === "Z1" || id === "Z3"));
+      if(filtered.length > 0) pool = filtered;
+    }
+    const pick = pool[Math.floor(Math.random()*pool.length)];
+    $("idInput").value = pick;
+    reveal(pick);
+  }
+
+  function renderList(cup){
+    const ids = Object.keys(games).filter(id => games[id].cup === cup);
+    const title = cup === "A" ? "🎈 ACTIVE CUP (A)" : "🔥 ADULT CUP (Z)";
+    const tag = cup === "A" ? "a" : "z";
+    return `
+      <details open>
+        <summary><span class="tag ${tag}">${title}</span></summary>
+        <div style="margin-top:8px">
+          ${ids.map(id=>{
+            const g = games[id];
+            return `
+              <details>
+                <summary><b>${g.id}</b> — ${escapeHtml(g.name)}</summary>
+                <div style="margin-top:10px">${renderGameCard(g)}</div>
+              </details>
+            `;
+          }).join("")}
+        </div>
+      </details>
+    `;
+  }
+
+  function renderLists(){
+    $("listA").innerHTML = renderList("A");
+    $("listZ").innerHTML = renderList("Z");
+  }
+
+  // -------- Musical Ball --------
+  const overlay = $("mbOverlay");
+  const mbMin = $("mbMin");
+  const mbMax = $("mbMax");
+  const mbStartBtn = $("mbStartBtn");
+  const mbStopBtn = $("mbStopBtn");
+  const mbStatus = $("mbStatus");
+  const mbTimerText = $("mbTimerText");
+
+  let mbTimeout = null;
+  let alarmInterval = null;
+  let audioCtx = null;
+  let alarmOn = false;
+
+  function openMusicalBall(){
+    overlay.classList.remove("red");
+    overlay.classList.add("green");
+    mbStatus.innerHTML = "<b>GREEN</b> = music ON. Pass the balloon.";
+    mbTimerText.textContent = "Set a range and hit Start.";
+    overlay.style.display = "flex";
+  }
+  function closeMusicalBall(){
+    stopAlarm();
+    if(mbTimeout){ clearTimeout(mbTimeout); mbTimeout = null; }
+    overlay.style.display = "none";
+  }
+
+  function startAlarm(){
+    if(!audioCtx){
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    alarmOn = true;
+
+    const playBeep = () => {
+      if(!alarmOn) return;
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      const now = audioCtx.currentTime;
+
+      o.type = "square";
+      o.frequency.setValueAtTime(880, now);
+      o.frequency.setValueAtTime(1320, now + 0.12);
+
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.exponentialRampToValueAtTime(0.85, now + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.28);
+
+      o.connect(g);
+      g.connect(audioCtx.destination);
+
+      o.start(now);
+      o.stop(now + 0.3);
+    };
+
+    playBeep();
+    alarmInterval = setInterval(playBeep, 350);
+  }
+
+  function stopAlarm(){
+    alarmOn = false;
+    if(alarmInterval){ clearInterval(alarmInterval); alarmInterval = null; }
+  }
+
+  function startMusicalBallTimer(){
+    stopAlarm();
+    if(mbTimeout){ clearTimeout(mbTimeout); mbTimeout = null; }
+
+    let minS = clamp(parseInt(mbMin.value || "10", 10), 8, 120);
+    let maxS = clamp(parseInt(mbMax.value || "25", 10), 8, 120);
+    if(maxS < minS + 4) maxS = clamp(minS + 4, 8, 120);
+
+    const span = maxS - minS;
+    const notTooSoonOffset = Math.ceil(span * 0.40);
+    const effectiveMin = Math.min(maxS, minS + notTooSoonOffset);
+    const stopAt = randInt(effectiveMin, maxS);
+
+    overlay.classList.remove("red");
+    overlay.classList.add("green");
+    mbStatus.innerHTML = "<b>GREEN</b> = music ON. Pass the balloon.";
+
+    const start = Date.now();
+    const tick = () => {
+      if(overlay.style.display !== "flex") return;
+      const elapsed = Math.floor((Date.now() - start) / 1000);
+      mbTimerText.textContent = `Between ${minS}s and ${maxS}s… (elapsed: ${elapsed}s)`;
+      if(elapsed < stopAt) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+
+    mbTimeout = setTimeout(() => {
+      overlay.classList.remove("green");
+      overlay.classList.add("red");
+      mbStatus.innerHTML = "<b>RED</b> = STOP. Whoever’s holding it drinks.";
+      mbTimerText.textContent = "ALARM 🔊";
+      startAlarm();
+    }, stopAt * 1000);
+  }
+
+  overlay.addEventListener("click", (e) => { if(e.target === overlay) closeMusicalBall(); });
+  mbStartBtn.addEventListener("click", (e) => { e.stopPropagation(); startMusicalBallTimer(); });
+  mbStopBtn.addEventListener("click", (e) => { e.stopPropagation(); closeMusicalBall(); });
+
+  // -------- Scoreboard --------
+  function addPlayersFromInput(){
+    const raw = $("playerInput").value.trim();
+    if(!raw) return;
+    const names = raw.split(",").map(s => s.trim()).filter(Boolean);
+    for(const name of names){
+      if(state.players.some(p => p.name.toLowerCase() === name.toLowerCase())) continue;
+      state.players.push({ name, wins: 0, losses: 0 });
+    }
+    $("playerInput").value = "";
+    saveState();
+    renderScoreboard();
+    syncPlayerSelect();
+  }
+
+  function removePlayer(name){
+    if(!confirm(`Remove ${name}? (History stays.)`)) return;
+    state.players = state.players.filter(p => p.name !== name);
+    saveState();
+    renderScoreboard();
+    syncPlayerSelect();
+  }
+
+  function syncPlayerSelect(){
+    const sel = $("playerSelect");
+    sel.innerHTML = "";
+    if(state.players.length === 0){
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "Add players first";
+      sel.appendChild(opt);
+      sel.disabled = true;
+      return;
+    }
+    sel.disabled = false;
+    const opt0 = document.createElement("option");
+    opt0.value = "";
+    opt0.textContent = "Player…";
+    sel.appendChild(opt0);
+
+    for(const p of state.players){
+      const opt = document.createElement("option");
+      opt.value = p.name;
+      opt.textContent = p.name;
+      sel.appendChild(opt);
+    }
+  }
+
+  function syncGameSelect(preferCurrent){
+    const sel = $("gameSelect");
+    sel.innerHTML = "";
+
+    const opt0 = document.createElement("option");
+    opt0.value = "";
+    opt0.textContent = "Game…";
+    sel.appendChild(opt0);
+
+    const ids = Object.keys(games).sort((a,b)=> a.localeCompare(b));
+    for(const id of ids){
+      const g = games[id];
+      const opt = document.createElement("option");
+      opt.value = id;
+      opt.textContent = `${id} — ${g.name}`;
+      sel.appendChild(opt);
+    }
+
+    if(preferCurrent && state.lastId){
+      sel.value = state.lastId;
+    }
+  }
+
+  function addHistory(type, playerName, g){
+    state.history.unshift({
+      ts: Date.now(),
+      type,
+      playerName,
+      gameId: g.id,
+      gameName: g.name
+    });
+  }
+
+  function logWin(){
+    const playerName = $("playerSelect").value;
+    const gameId = $("gameSelect").value || state.lastId;
+    if(!playerName) return alert("Pick a player.");
+    if(!gameId) return alert("Pick a game (or reveal one first).");
+
+    const g = games[gameId];
+    const p = state.players.find(x => x.name === playerName);
+    if(p) p.wins += 1;
+
+    addHistory("win", playerName, g);
+    saveState();
+    renderScoreboard();
+    $("playerSelect").value = "";
+  }
+
+  function logLoss(){
+    const playerName = $("playerSelect").value;
+    const gameId = $("gameSelect").value || state.lastId;
+    if(!playerName) return alert("Pick a player.");
+    if(!gameId) return alert("Pick a game (or reveal one first).");
+
+    const g = games[gameId];
+    const p = state.players.find(x => x.name === playerName);
+    if(p) p.losses += 1;
+
+    addHistory("loss", playerName, g);
+    saveState();
+    renderScoreboard();
+    $("playerSelect").value = "";
+  }
+
+  function clearHistory(){
+    if(!confirm("Clear history?")) return;
+    state.history = [];
+    saveState();
+    renderScoreboard();
+  }
+
+  function formatTime(ts){
+    const d = new Date(ts);
+    return d.toLocaleString([], { hour:'2-digit', minute:'2-digit' });
+  }
+
+  function renderScoreboard(){
+    $("playerCount").textContent = state.players.length;
+    $("historyCount").textContent = state.history.length;
+
+    const chips = state.players.map(p => `
+      <span class="chip">
+        ${escapeHtml(p.name)}
+        <button class="btnDanger" data-remove="${escapeHtml(p.name)}">Remove</button>
+      </span>
+    `).join("");
+    $("playerChips").innerHTML = chips || `<span class="muted">No players yet.</span>`;
+    document.querySelectorAll("[data-remove]").forEach(btn => {
+      btn.addEventListener("click", () => removePlayer(btn.getAttribute("data-remove")));
+    });
+
+    const sorted = [...state.players].sort((a,b)=>{
+      const aNet = a.wins - a.losses;
+      const bNet = b.wins - b.losses;
+      return bNet - aNet || b.wins - a.wins || a.name.localeCompare(b.name);
+    });
+
+    $("scoreTableWrap").innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th class="right">Wins</th>
+            <th class="right">Losses</th>
+            <th class="right">Net</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sorted.map(p => `
+            <tr>
+              <td>${escapeHtml(p.name)}</td>
+              <td class="right"><b>${p.wins}</b></td>
+              <td class="right"><b>${p.losses}</b></td>
+              <td class="right"><b>${p.wins - p.losses}</b></td>
+            </tr>
+          `).join("") || `<tr><td colspan="4" class="muted">Add players to start tracking.</td></tr>`}
+        </tbody>
+      </table>
+    `;
+
+    const histHtml = state.history.slice(0, 80).map(h => `
+      <div class="chip">
+        <b>${escapeHtml(h.playerName)}</b>
+        <span class="muted">${h.type === "win" ? "WON" : "LOST"}</span>
+        <b>${escapeHtml(h.gameId)}</b>
+        <span class="muted">(${escapeHtml(h.gameName)})</span>
+        <span class="muted">@ ${formatTime(h.ts)}</span>
+      </div>
+    `).join("");
+    $("historyList").innerHTML = histHtml || `<span class="muted">No results logged yet.</span>`;
+  }
+
+  function roundRect(ctx, x, y, w, h, r, fill, stroke){
+    if (typeof r === 'number') r = {tl:r,tr:r,br:r,bl:r};
+    ctx.beginPath();
+    ctx.moveTo(x + r.tl, y);
+    ctx.lineTo(x + w - r.tr, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r.tr);
+    ctx.lineTo(x + w, y + h - r.br);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r.br, y + h);
+    ctx.lineTo(x + r.bl, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r.bl);
+    ctx.lineTo(x, y + r.tl);
+    ctx.quadraticCurveTo(x, y, x + r.tl, y);
+    ctx.closePath();
+    if (fill) ctx.fill();
+    if (stroke) ctx.stroke();
+  }
+
+  function saveScoreboardToImage(){
+    const canvas = $("scoreCanvas");
+    const ctx = canvas.getContext("2d");
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const grad = ctx.createLinearGradient(0,0,canvas.width,canvas.height);
+    grad.addColorStop(0, "#0b0c10");
+    grad.addColorStop(1, "#12141c");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    ctx.fillStyle = "#e8edf2";
+    ctx.font = "700 56px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    ctx.fillText("Cookie Economy 🍪", 60, 90);
+
+    ctx.fillStyle = "#9aa4b2";
+    ctx.font = "400 28px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    ctx.fillText(`Round: ${state.round} | Players: ${state.players.length} | Logs: ${state.history.length}`, 60, 135);
+
+    ctx.fillStyle = "rgba(255,255,255,0.06)";
+    roundRect(ctx, 50, 170, 1100, 400, 22, true, false);
+
+    ctx.fillStyle = "#7dd3fc";
+    ctx.font = "700 30px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    ctx.fillText("Scoreboard", 80, 220);
+
+    const sorted = [...state.players].sort((a,b)=>{
+      const aNet = a.wins - a.losses;
+      const bNet = b.wins - b.losses;
+      return bNet - aNet || b.wins - a.wins || a.name.localeCompare(b.name);
+    });
+
+    ctx.font = "500 26px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    ctx.fillStyle = "#e8edf2";
+
+    let y = 270;
+    const maxRows = 10;
+
+    ctx.fillStyle = "#9aa4b2";
+    ctx.fillText("Player", 90, y);
+    ctx.textAlign = "right";
+    ctx.fillText("W", 980, y);
+    ctx.fillText("L", 1060, y);
+    ctx.fillText("Net", 1130, y);
+    ctx.textAlign = "left";
+    y += 36;
+
+    ctx.fillStyle = "#e8edf2";
+    for(let i=0; i<Math.min(sorted.length, maxRows); i++){
+      const p = sorted[i];
+      ctx.fillText(`${i+1}. ${p.name}`, 90, y);
+      ctx.textAlign = "right";
+      ctx.fillText(`${p.wins}`, 980, y);
+      ctx.fillText(`${p.losses}`, 1060, y);
+      ctx.fillText(`${p.wins - p.losses}`, 1130, y);
+      ctx.textAlign = "left";
+
+      ctx.fillStyle = "rgba(255,255,255,0.08)";
+      ctx.fillRect(80, y+12, 1040, 2);
+      ctx.fillStyle = "#e8edf2";
+      y += 42;
+    }
+
+    ctx.fillStyle = "#9aa4b2";
+    ctx.font = "400 22px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+    const last = state.history[0];
+    const lastText = last
+      ? `Last: ${last.playerName} ${last.type === "win" ? "WON" : "LOST"} ${last.gameId} (${last.gameName}) @ ${formatTime(last.ts)}`
+      : "No results logged yet.";
+    ctx.fillText(lastText, 60, 610);
+
+    const dataUrl = canvas.toDataURL("image/png");
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = `cookie-economy-scoreboard.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    alert("Saved! On iPhone, use the share/download sheet and choose “Save Image” to Photos.");
+  }
+
+  // ---------------- Welcome Splash Logic ----------------
+  let splashTimer = null;
+  function showApp(){
+    $("welcomeSplash").classList.add("hidden");
+    $("appRoot").classList.remove("hidden");
+    if(splashTimer){ clearInterval(splashTimer); splashTimer = null; }
+  }
+  function startSplashAutoEnter(){
+    let left = 10;
+    $("autoCountdown").textContent = left;
+    splashTimer = setInterval(() => {
+      left -= 1;
+      $("autoCountdown").textContent = Math.max(left, 0);
+      if(left <= 0){
+        clearInterval(splashTimer);
+        splashTimer = null;
+        showApp();
+      }
+    }, 1000);
+  }
+
+  // Wire up main buttons
+  $("revealBtn").addEventListener("click", () => reveal(normId($("idInput").value)));
+  $("idInput").addEventListener("keydown", (e) => { if(e.key === "Enter") reveal(normId($("idInput").value)); });
+  $("dicePickBtn").addEventListener("click", randomPick);
+  $("retireBtn").addEventListener("click", retireCurrent);
+  $("resetBtn").addEventListener("click", resetNight);
+  $("nukeBtn").addEventListener("click", hardReset);
+
+  $("addPlayersBtn").addEventListener("click", addPlayersFromInput);
+  $("playerInput").addEventListener("keydown", (e)=>{ if(e.key==="Enter") addPlayersFromInput(); });
+
+  $("logWinBtn").addEventListener("click", logWin);
+  $("logLossBtn").addEventListener("click", logLoss);
+  $("clearHistoryBtn").addEventListener("click", clearHistory);
+  $("saveScoreImgBtn").addEventListener("click", saveScoreboardToImage);
+
+  // Init
+  function init(){
+    renderLists();
+    renderScoreboard();
+    syncPlayerSelect();
+    syncGameSelect(true);
+    updateHeader();
+
+    if(state.lastId && games[state.lastId] && !state.retiredIds.includes(state.lastId)){
+      setDisplay(renderGameCard(games[state.lastId]));
+      const btn = document.getElementById("playGameBtn");
+      if(btn) btn.addEventListener("click", openMusicalBall);
+    }
+
+    // Welcome splash controls
+    $("enterBtn").addEventListener("click", showApp);
+    $("skipAutoBtn").addEventListener("click", showApp);
+    document.addEventListener("keydown", (e)=>{ if(e.key === "Enter" && !$("welcomeSplash").classList.contains("hidden")) showApp(); });
+    startSplashAutoEnter();
+  }
+  init();
+</script>
+</body>
+</html>
