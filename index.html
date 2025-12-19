@@ -112,6 +112,7 @@
     }
     summary{cursor:pointer; font-weight:600}
     .twoCol{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .twoCol.single{grid-template-columns:1fr;}
     @media (max-width:640px){.twoCol{grid-template-columns:1fr}}
     .mini{font-size:12px;color:var(--muted)}
     .foot{margin-top:14px;color:var(--muted);font-size:12px;}
@@ -383,17 +384,17 @@
 
       <section class="card" style="margin-top:14px">
         <div class="titleRow">
-          <div><span class="tag a">ACTIVE CUP (A)</span><span class="tag z">ADULT CUP (Z)</span></div>
+          <div><span class="tag a">ACTIVE CUP (A)</span><span id="zTag" class="tag z hidden">Z CUP (Z)</span></div>
           <div class="row">
-            <input id="adultCodeInput" type="password" placeholder="Adult code" aria-label="Adult section code" />
-            <button id="unlockAdultBtn">Unlock Adult Cup</button>
+            <input id="adultCodeInput" type="password" placeholder="Z code" aria-label="Z section code" />
+            <button id="unlockAdultBtn">Unlock Z Cup</button>
           </div>
         </div>
-        <p class="mini" id="adultStatus" style="margin:6px 0 0">Enter the code to unlock the adult section.</p>
-        <div class="twoCol">
+        <p class="mini" id="adultStatus" style="margin:6px 0 0">Enter the code to unlock the Z section.</p>
+        <div id="cupLists" class="twoCol">
           <div id="listA"></div>
-          <div id="adultLockWrap" class="lockBox">
-            <div id="adultOverlay" class="lockOverlay">Enter the code to unlock the Adult Cup.</div>
+          <div id="adultLockWrap" class="lockBox hidden">
+            <div id="adultOverlay" class="lockOverlay">Enter the code to unlock the Z Cup.</div>
             <div id="listZ" class="lockContent locked"></div>
           </div>
         </div>
@@ -448,7 +449,7 @@
   }
   function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
   let state = loadState();
-  const ADULT_CODE = "cookie";
+  const Z_CODE = "cookie";
 
   const $ = (id) => document.getElementById(id);
   function escapeHtml(str){
@@ -487,7 +488,7 @@
   };
 
   function badgeForCup(cup){
-    return cup === "A" ? `<span class="tag a">ACTIVE</span>` : `<span class="tag z">ADULT</span>`;
+    return cup === "A" ? `<span class="tag a">ACTIVE</span>` : `<span class="tag z">Z</span>`;
   }
 
   function renderGameCard(game){
@@ -533,6 +534,10 @@
       setDisplay(`<p class="muted">♻️ Retired ID. Redraw.</p>` + renderGameCard(game));
       return;
     }
+    if(game.cup === "Z" && !state.adultUnlocked){
+      setDisplay(`<p class="muted">🔒 Z section locked. Enter the code first.</p>`);
+      return;
+    }
     state.lastId = id;
     saveState();
 
@@ -571,7 +576,9 @@
   }
 
   function randomPick(){
-    const ids = Object.keys(games).filter(id => !state.retiredIds.includes(id));
+    const ids = Object.keys(games)
+      .filter(id => !state.retiredIds.includes(id))
+      .filter(id => state.adultUnlocked || games[id].cup !== "Z");
     if(ids.length === 0){
       setDisplay(`<p class="muted">No IDs left. 🎉</p>`);
       return;
@@ -588,7 +595,7 @@
 
   function renderList(cup){
     const ids = Object.keys(games).filter(id => games[id].cup === cup);
-    const title = cup === "A" ? "🎈 ACTIVE CUP (A)" : "🔥 ADULT CUP (Z)";
+    const title = cup === "A" ? "🎈 ACTIVE CUP (A)" : "🔥 Z CUP (Z)";
     const tag = cup === "A" ? "a" : "z";
     return `
       <details open>
@@ -616,24 +623,28 @@
   function updateAdultLockUI(){
     const unlocked = !!state.adultUnlocked;
     $("listZ").classList.toggle("locked", !unlocked);
-    $("adultOverlay").classList.toggle("hidden", unlocked);
+    $("adultOverlay").classList.add("hidden");
+    $("adultLockWrap").classList.toggle("hidden", !unlocked);
+    $("zTag").classList.toggle("hidden", !unlocked);
+    $("cupLists").classList.toggle("single", !unlocked);
     $("adultStatus").textContent = unlocked
-      ? "Adult section unlocked."
-      : "Adult section locked. Enter the code to view.";
+      ? "Z section unlocked."
+      : "Z section locked. Enter the code to view.";
   }
 
   function unlockAdultSection(){
     const code = ($("adultCodeInput").value || "").trim().toLowerCase();
     $("adultCodeInput").value = "";
-    if(code === ADULT_CODE){
+    if(code === Z_CODE){
       state.adultUnlocked = true;
       saveState();
       updateAdultLockUI();
+      syncGameSelect(true);
       return;
     }
     $("adultStatus").textContent = code
       ? "Incorrect code."
-      : "Enter the code to unlock the adult section.";
+      : "Enter the code to unlock the Z section.";
   }
 
   // -------- Musical Ball --------
@@ -814,7 +825,9 @@
     opt0.textContent = "Game…";
     sel.appendChild(opt0);
 
-    const ids = Object.keys(games).sort((a,b)=> a.localeCompare(b));
+    const ids = Object.keys(games)
+      .filter(id => state.adultUnlocked || games[id].cup !== "Z")
+      .sort((a,b)=> a.localeCompare(b));
     for(const id of ids){
       const g = games[id];
       const opt = document.createElement("option");
@@ -1086,9 +1099,14 @@
     updateHeader();
 
     if(state.lastId && games[state.lastId] && !state.retiredIds.includes(state.lastId)){
-      setDisplay(renderGameCard(games[state.lastId]));
-      const btn = document.getElementById("playGameBtn");
-      if(btn) btn.addEventListener("click", openMusicalBall);
+      if(games[state.lastId].cup === "Z" && !state.adultUnlocked){
+        state.lastId = null;
+        saveState();
+      }else{
+        setDisplay(renderGameCard(games[state.lastId]));
+        const btn = document.getElementById("playGameBtn");
+        if(btn) btn.addEventListener("click", openMusicalBall);
+      }
     }
 
     // Welcome splash controls
